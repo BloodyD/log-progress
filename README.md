@@ -6,7 +6,8 @@ Just copy and paste it into your project:
 def log_progress(sequence, every=None, size=None):
     from ipywidgets import IntProgress, HTML, VBox
     from IPython.display import display
-    
+    import time, datetime
+
     is_iterator = False
     if size is None:
         try:
@@ -30,19 +31,27 @@ def log_progress(sequence, every=None, size=None):
     label = HTML()
     box = VBox(children=[label, progress])
     display(box)
-    
+
     index = 0
+    start = time.time()
     try:
         for index, record in enumerate(sequence, 1):
             if index == 1 or index % every == 0:
+                iter_time = time.time() - start
                 if is_iterator:
-                    label.value = '{index} / ?'.format(index=index)
+                    label.value = '{index} / ? ({iter_time:.3f}s)'.format(
+                        index=index,
+                        iter_time = iter_time)
                 else:
                     progress.value = index
-                    label.value = u'{index} / {size}'.format(
+                    ETA = iter_time * (size - index)
+                    hour, minute, second = map(int, [ETA // 3600, ETA % 3600 // 60, ETA % 60])
+                    label.value = u'{index} / {size} ({iter_time:.3f}s ETA: {ETA:%H:%M:%S})'.format(
                         index=index,
-                        size=size
-                    )
+                        size=size,
+                        iter_time = iter_time,
+                        ETA = datetime.time(hour = hour, minute = minute, second = second, ))
+            start = time.time()
             yield record
     except:
         progress.bar_style = 'danger'
